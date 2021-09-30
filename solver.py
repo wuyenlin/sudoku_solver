@@ -24,29 +24,35 @@ class Solver:
         self.blks = self.get_blks(self.all)
 
 
-    def check_repeat(self, elem):
-        if len(elem) != len(set(elem)):
-            return False
-        return True
 
-    def check_solved(self):
-        return True
+    def get_candidates(self):
+        def blk_index(i, j):
+            return (i//3) * 3 + j//3
+        
+        self.initialize()
+        candidates = []
+        for i in range(9):
+            row_candidates = []
+            for j in range(9):
+                row = set(self.rows[i])
+                col = set(self.cols[j])
+                sub = set(self.blks[blk_index(i, j)])
 
-    def solve(self, all):
+                common = row | col | sub
+                cand = set(range(10)) - common
+
+                if not self.rows[i][j]:
+                    row_candidates.append(list(cand))
+                else:
+                    row_candidates.append([self.rows[i][j]])
+            candidates.append(row_candidates)
+        self.candidates = candidates
+
+
+    def solve(self):
         #TODO complete solver ###
-        self.initialize(all)
-        while True:
-            for row in self.rows:
-                self.check_repeat(row)
-            for col in self.cols:
-                self.check_repeat(col)
-            for blk in self.blks:
-                self.check_repeat(blk)
+        pass
 
-            if self.check_solved():
-                print(solved)
-                break
-        print("Solved MALAKA")
 
 if __name__ == "__main__":
 
@@ -62,6 +68,5 @@ if __name__ == "__main__":
     all = [r1, r2, r3, r4, r5, r6, r7, r8, r9]
     s = Solver(all)
     s.initialize()
-    print(s.rows)
-    print(s.cols)
-    print(s.blks)
+    s.get_candidates()
+    print(s.candidates)
