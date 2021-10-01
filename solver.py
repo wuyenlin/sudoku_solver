@@ -7,31 +7,31 @@ def blk_index(i, j):
 
 
 class Solver:
-    def __init__(self, all: list) -> np.array:
-        self.original = all
+    def __init__(self, puzzle: list) -> np.array:
+        self.puzzle = puzzle
 
 
-    def get_blks(self, all):
+    def get_blks(self, puzzle):
         blks = []
         for box_i in range(3):
             for box_j in range(3):
                 blk = []
                 for i in range(3):
                     for j in range(3):
-                        blk.append(all[3*box_i + i][3*box_j + j])
+                        blk.append(puzzle[3*box_i + i][3*box_j + j])
                 blks.append(blk)
         return np.array(blks)
 
 
-    def initialize(self, all):
+    def initialize(self, puzzle):
         """get rows, columns and blocks"""
-        self.rows = np.array(all)
-        self.cols = np.array(all).T
-        self.blks = self.get_blks(all)
+        self.rows = np.array(puzzle)
+        self.cols = np.array(puzzle).T
+        self.blks = self.get_blks(puzzle)
 
 
-    def get_candidates(self, all):
-        self.initialize(all)
+    def get_candidates(self, puzzle):
+        self.initialize(puzzle)
         candidates = []
         for i in range(9):
             row_candidates = []
@@ -51,10 +51,9 @@ class Solver:
         self.candidates = candidates
 
 
-    def solve(self):
-        puzzle = self.original.copy()
+    def fill(self, puzzle):
+        # puzzle = self.puzzle.copy()
         self.get_candidates(puzzle)
-        print(self.candidates)
         to_fill = True
         while to_fill:
             to_fill = False
@@ -85,27 +84,32 @@ class Solver:
         return True
 
 
-    def filter(self):
-        from copy import deepcopy
-        # Check for empty cells
-        test = self.original.copy()
-        self.get_candidates(test)
-        filtered_candidates = deepcopy(self.candidates)
+    def match(self, puzzle):
+        puzzle = puzzle.copy()
+        self.get_candidates(puzzle)
+        # Getting the shortest number of candidates > 1:
+        min_len = sorted(list(set(map(len, np.array(self.candidates).reshape(1,81)[0]))))[1]
         for i in range(9):
             for j in range(9):
-                if test[i][j] == 0:
-                    for candidate in self.candidates[i][j]:
-                        # Use test candidate
-                        test[i][j] = candidate
-                        # Remove candidate if it produces an invalid grid
-                        if not is_valid_grid(self.solve(test)):
-                            filtered_candidates[i][j].remove(candidate)
-                        # Revert changes
-                        test[i][j] = 0
+                if len(self.candidates[i][j]) == min_len:
+                    for guess in self.candidates[i][j]:
+                        puzzle[i][j] = guess
+                        solution = self.solve(puzzle)
+                        print(solution)
+                        if solution is not None:
+                            return solution
+                        # Discarding a wrong guess
+                        puzzle[i][j] = 0
 
 
-    def main(self):
-        self.solve()
+    def solve(self, puzzle):
+        self.fill(puzzle)
+        if self.correct(puzzle):
+            return puzzle
+        if not self.valid(puzzle):
+            return None
+        return self.match(self.puzzle)
+    
 
 
 if __name__ == "__main__":
@@ -120,4 +124,4 @@ if __name__ == "__main__":
     r9 = [0,4,8,1,6,3,0,0,0]
     puzzle = [r1, r2, r3, r4, r5, r6, r7, r8, r9]
     s = Solver(puzzle)
-    s.main()
+    solution = s.solve(s.puzzle)
