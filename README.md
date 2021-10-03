@@ -46,5 +46,6 @@ it will return
 
 
 ### TODO
-- [ ] Add GUI
-- [ ] Combine with OpenCV that detects the grid and numbers
+- [ ] Use OpenCV to preprocess images
+- [ ] Use PyTorch to build a DNN that recognizes digits
+- [X] Solve sudoku
