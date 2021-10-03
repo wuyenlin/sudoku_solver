@@ -1,5 +1,5 @@
 # sudoku_solver
-This is a home project that solves the famous puzzle - SUDOKU.
+This is a home project that solves the famous number-placement puzzle - [SUDOKU](https://en.wikipedia.org/wiki/Sudoku).
 
 
 ### Example
@@ -18,6 +18,16 @@ Input of the puzzle
 4 0 9 | 0 0 0 | 0 0 0 
 ```
 
+`sudoku` is a boolean function that returns whether the given puzzle has been solved.
+
+Arguments (puzzle, 0, 0) mean that the code will start solving the puzzle from 0th row and 0th column.
+
+To solve the puzzle, use the following code:
+```
+if sudoku(puzzle, 0, 0):
+    visualize(puzzle)
+```
+
 If there is a unique solution to the input puzzle,
 it will return 
 ```
@@ -33,3 +43,8 @@ it will return
 2 7 8 | 9 3 6 | 4 5 1 
 4 6 9 | 1 2 5 | 8 7 3 
 ```
+
+
+### TODO
+- [ ] Add GUI
+- [ ] Combine with OpenCV that detects the grid and numbers
