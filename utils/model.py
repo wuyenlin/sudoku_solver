@@ -32,7 +32,7 @@ class tell_digit(nn.Module):
 
 
 if __name__ == "__main__":
-    model = ra_net()
+    model = tell_digit()
     inp = torch.rand(1,3,256,256)
     output = model(inp)
     print(output.shape)
