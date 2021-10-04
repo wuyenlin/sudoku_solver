@@ -1,8 +1,24 @@
 # sudoku_solver
-This is a home project that solves the famous number-placement puzzle - [SUDOKU](https://en.wikipedia.org/wiki/Sudoku).
+This is a home project that solves the famous number-placement puzzle - [SUDOKU](https://en.wikipedia.org/wiki/Sudoku),
+combined with OpenCV and PyTorch libraries.
+
+It is an end-to-end pipeline that assumes RGB image as input and solves the puzzle in the image.
+
+## Table of Contents
+1. Image preprocessing
+2. Digits recognition
+3. Sudoku solver
+
+### Image Preprocessing
+
+Here is an sample input image that contains a full Sudoku puzzle:
+<p align="center"><img src="doc/sample.jpg" width="40%" alt="" /></p>
+
+The processed image will look like this:
+<p align="center"><img src="doc/cropped.jpg" width="40%" alt="" /></p>
 
 
-### Example
+### Sudoku Solver
 Input of the puzzle
 ```
 8 2 7 | 5 6 4 | 0 0 0 
@@ -46,6 +62,6 @@ it will return
 
 
 ### TODO
-- [ ] Use OpenCV to preprocess images
+- [X] Use OpenCV to preprocess images
 - [ ] Use PyTorch to build a DNN that recognizes digits
 - [X] Solve sudoku
