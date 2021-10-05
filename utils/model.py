@@ -2,37 +2,44 @@
 
 import torch
 import torch.nn as nn
-from torchvision import models
+import torch.nn.functional as F
 
-class tell_digit(nn.Module):
+
+class Net(nn.Module):
     def __init__(self):
         super().__init__()
-
-        self.backbone = models.resnet18(pretrained=True)
-        self.fc = nn.Sequential(
-            nn.Linear(512, 128),
-            nn.Dropout(p=0.8, inplace=False),
-            nn.Linear(128, 10),
-            nn.LogSoftmax()
+        self.blk1= nn.Sequential(
+            nn.Conv2d(1, 28, 5, 1),
+            nn.Conv2d(28, 28, 5, 1, bias=False),
+            nn.BatchNorm2d(28)
         )
 
+        self.blk2 = nn.Sequential(
+            nn.Conv2d(28, 56, 3, 1),
+            nn.Conv2d(56, 56, 3, 1, bias=False),
+            nn.BatchNorm2d(56)
+        )
+
+        self.pool = nn.Sequential(
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2),
+        )
+
+        self.dropout = nn.Dropout(0.25)
+        self.bn = nn.BatchNorm1d(1)
+        self.fc1 = nn.Linear(504, 84, bias=False)
+        self.fc2 = nn.Linear(84, 10, bias=False)
+
+
     def forward(self, x):
-        x = self.backbone.conv1(x)
-        x = self.backbone.bn1(x)
-        x = self.backbone.relu(x)
-        x = self.backbone.maxpool(x)
-        x = self.backbone.layer1(x)
-        x = self.backbone.layer2(x)
-        x = self.backbone.layer3(x)
-        x = self.backbone.layer4(x)
-        x = self.backbone.avgpool(x)
-        x = x.view(x.size(0), x.size(1))
+        bs = x.size(0)
+        x = self.pool(self.blk1(x))
+        x = self.dropout(x)
+        x = self.pool(self.blk2(x))
+        x = self.dropout(x)
+        x = x.view(bs, 1, -1)
+        x = self.bn(self.fc1(x))
+        x = self.fc2(x)
+        x = F.log_softmax(x, dim=2)
 
-        return self.fc(x)
-
-
-if __name__ == "__main__":
-    model = tell_digit()
-    inp = torch.rand(1,3,256,256)
-    output = model(inp)
-    print(output.shape)
+        return x.squeeze(1)
