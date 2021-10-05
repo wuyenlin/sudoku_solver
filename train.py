@@ -10,6 +10,13 @@ import torch.nn.functional as F
 
 from utils.model import Net
 
+"""
+This script is borrowed and modified from
+https://github.com/pytorch/examples/blob/master/mnist/main.py
+Since the original neural network was giving an accuracy of 10%, I have
+built my own model in `utils.model.py`.
+"""
+
 
 def train(args, model, device, train_loader, optimizer, epoch):
     model.train()
