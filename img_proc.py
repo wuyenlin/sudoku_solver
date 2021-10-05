@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import operator
 import numpy as np
 import cv2 as cv
 
