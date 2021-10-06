@@ -95,10 +95,9 @@ def main():
         test_kwargs.update(cuda_kwargs)
 
     transform = transforms.Compose([
-        transforms.Grayscale(num_output_channels=1),
         transforms.Resize([28,28]),
         transforms.ToTensor(),
-        transforms.Normalize((0.1307,), (0.3081,))
+        transforms.Normalize(mean=[0.5,0.5,0.5], std=[0.5,0.5,0.5]),
         ])
     dataset1 = datasets.MNIST("../data", train=True, download=True,
                        transform=transform)
