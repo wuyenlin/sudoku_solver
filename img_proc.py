@@ -46,8 +46,11 @@ def main():
     path = "./doc/sample.jpg"
     img, thresh = process_img(path)
     cropped = crop_contour(img, thresh)
+    process = cv.bitwise_not(cropped, cropped)
+    resized = cv.resize(process, (900,900), interpolation=cv.INTER_LINEAR)
 
-    cv.imshow("image", cropped)
+    cv.imshow("image", resized)
+    cv.imwrite("./doc/cropped.jpg", resized)
     k = cv.waitKey(0) & 0xFF
     if k == 27:
         cv.destroyAllWindows()
