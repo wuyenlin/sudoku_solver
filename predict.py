@@ -1,16 +1,25 @@
 #!/usr/bin/python3
-from torchvision.transforms.transforms import CenterCrop
 from utils.model import Net
 
 import torch
 from torchvision import transforms
 from PIL import Image
 
+def crop_subgrid():
+    import cv2 as cv
+    img = cv.imread("./doc/cropped.jpg")
+    print(img.shape)
+    cropped = img[400:500, 400:500, :]
+    cv.imshow("image", img[400:500, 400:500, :])
+    cv.imwrite("./data/6.jpg", cropped)
+    k = cv.waitKey(0) & 0xFF
+    if k == 27:
+        cv.destroyAllWindows()
+
 
 def tell_digit(model, cell: Image) -> int:
     transform = transforms.Compose([
         transforms.Grayscale(num_output_channels=1),
-        transforms.CenterCrop([80,80]),
         transforms.Resize([28,28]),
         transforms.ToTensor(),
         transforms.Normalize((0.1307,), (0.3081,))
@@ -21,6 +30,7 @@ def tell_digit(model, cell: Image) -> int:
     output = model(img)
     return torch.argmax(output).item()
 
+
 def main(path):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     model = Net()
@@ -29,7 +39,6 @@ def main(path):
     model.eval()
 
     original_img = Image.open(path)
-    print(original_img.size)
     assert original_img.size == (900,900)
     total_grid = []
     for i in range(9):
@@ -40,7 +49,6 @@ def main(path):
             top = i*100
             bottom = (i+1)*100
             per_cell = original_img.crop((left, top, right, bottom))
-            # per_cell.show()
             number = tell_digit(model, per_cell)
             row.append(number)
         total_grid.append(row)
