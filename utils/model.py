@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 
 import torch.nn as nn
-import torch.nn.functional as F
 
 
 class Net(nn.Module):
@@ -28,6 +27,7 @@ class Net(nn.Module):
         self.bn = nn.BatchNorm1d(1)
         self.fc1 = nn.Linear(504, 84, bias=False)
         self.fc2 = nn.Linear(84, 10, bias=False)
+        self.softmax = nn.Softmax(dim=2)
 
 
     def forward(self, x):
@@ -39,6 +39,6 @@ class Net(nn.Module):
         x = x.view(bs, 1, -1)
         x = self.bn(self.fc1(x))
         x = self.fc2(x)
-        x = F.log_softmax(x, dim=2)
+        x = self.softmax(x)
 
         return x.squeeze(1)
