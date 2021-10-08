@@ -20,23 +20,26 @@ I have built my own model in `utils.model.py`.
 
 def train(args, model, device, train_loader, optimizer, criterion, epoch):
     model.train()
-    for batch_idx, (data, target) in enumerate(train_loader):
-        data, target = data.to(device), target.to(device)
-        optimizer.zero_grad()
-        output = model(data)
-        # loss = F.nll_loss(output, target)
-        loss = criterion(output, target)
-        loss.backward()
-        optimizer.step()
-        if batch_idx % args.log_interval == 0:
-            print("Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}".format(
-                epoch, batch_idx * len(data), len(train_loader.dataset),
-                100. * batch_idx / len(train_loader), loss.item()))
-            if args.single:
-                break
+    train_loss = 0
+    correct = 0
+    for data, label in train_loader:
+        data, label = data.to(device), label.to(device)  
+        optimizer.zero_grad()  
+        output = model(data) 
+        loss = criterion(output, label)  
+        loss.backward() 
+        optimizer.step()  
+        train_loss += loss.item() 
+        pred = output.argmax(dim=1, keepdim=True)
+        correct += pred.eq(label.view_as(pred)).sum().item()
+
+    accuracy = correct*100 / len(train_loader.dataset)
+    print("epoch for train: {}, accuracy: ({:.2f}%)".format(epoch, accuracy))
+    return accuracy
 
 
-def test(model, device, test_loader):
+
+def test(model, device, test_loader, epoch):
     model.eval()
     test_loss = 0
     correct = 0
@@ -49,10 +52,9 @@ def test(model, device, test_loader):
             correct += pred.eq(target.view_as(pred)).sum().item()
 
     test_loss /= len(test_loader.dataset)
-
-    print("\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n".format(
-        test_loss, correct, len(test_loader.dataset),
-        100. * correct / len(test_loader.dataset)))
+    accuracy = correct*100 / len(test_loader.dataset)
+    print("epoch for test: {}, accuracy: ({:.2f}%)".format(epoch, accuracy))
+    return accuracy
 
 
 def main():
@@ -70,14 +72,10 @@ def main():
                         help="Learning rate step gamma (default: 0.7)")
     parser.add_argument("--no_cuda", action="store_true", default=False,
                         help="disables CUDA training")
-    parser.add_argument("--single", action="store_true", default=False,
-                        help="quickly check a single pass")
     parser.add_argument("--seed", type=int, default=1, metavar="S",
                         help="random seed (default: 1)")
     parser.add_argument("--log_interval", type=int, default=10, metavar="N",
                         help="how many batches to wait before logging training status")
-    parser.add_argument("--save_model", action="store_true", default=False,
-                        help="For Saving the current Model")
     parser.add_argument("--export_training_curves", action="store_true", 
                         help="Save train/val curves in .png file")
     args = parser.parse_args()
@@ -112,19 +110,23 @@ def main():
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
     criterion = nn.CrossEntropyLoss()
 
+    train_accuracy = []
+    test_accuracy = []
     for epoch in range(1, args.epochs + 1):
-        train(args, model, device, train_loader, optimizer, criterion, epoch)
-        test(model, device, test_loader)
 
-        # TODO: fix function
-        if args.export_training_curves and epochs > 3:
+        train_acc = train(args, model, device, train_loader, optimizer, criterion, epoch)
+        test_acc = test(model, device, test_loader, epoch)
+        train_accuracy.append(train_acc)
+        test_accuracy.append(test_acc)
+
+        if args.export_training_curves and epoch > 3:
             import matplotlib.pyplot as plt
             import matplotlib
             matplotlib.use("Agg")
             plt.figure()
-            epoch_x = np.arange(3, len(losses_3d_train)) + 1
-            plt.plot(epoch_x, losses_3d_train[3:], "--", color="C0")
-            plt.plot(epoch_x, losses_3d_valid[3:], color="C1")
+            epoch_x = np.arange(3, len(train_accuracy)) + 1
+            plt.plot(epoch_x, train_accuracy, "--", color="C0")
+            plt.plot(epoch_x, test_accuracy, color="C1")
             plt.legend(["", ""])
             plt.ylabel("Accuracy (%)")
             plt.xlabel("Epoch")
@@ -132,11 +134,9 @@ def main():
             plt.savefig("./accuracy.png")
             plt.close("all")
 
-
-    if args.save_model:
-        save_path = "./mnist_cnn.pth"
-        torch.save(model.state_dict(), save_path)
-        print("Parameters saved to ", save_path)
+    save_path = "./mnist_cnn.pth"
+    torch.save(model.state_dict(), save_path)
+    print("Parameters saved to ", save_path)
 
 
 if __name__ == "__main__":
