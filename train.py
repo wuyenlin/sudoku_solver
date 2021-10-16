@@ -1,82 +1,98 @@
 #!/usr/bin/python3
 from __future__ import print_function
 import argparse
+import os
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
-from torch.optim.lr_scheduler import StepLR
 import torch.nn.functional as F
+from PIL import Image
 
-from utils.model import Net
+from utils.model import *
 
 """
 This script is borrowed and modified from
 https://github.com/pytorch/examples/blob/master/mnist/main.py
 Since the original neural network was giving low accuracy, 
-I have built my own model in `utils.model.py`.
+I have built my own model in `utils/model.py`.
 """
 
+class Data:
+    def __init__(self, img_folder, train: bool, transform=None):
+        self.transform = transform
+        self.length = 1000 if train else 200
 
-def train(args, model, device, train_loader, optimizer, epoch):
+        self.img_list = [os.path.join(img_folder, "{}.jpg".format(i%10)) for i in range(self.length)]
+        self.label_list = [i%10 for i in range(self.length)]
+
+
+    def __getitem__(self, index):
+        img_path = self.img_list[index]
+        image = self.transform(Image.open(img_path))
+        label = self.label_list[index]
+        return image, label
+
+    def __len__(self):
+        return self.length
+
+
+def train(args, model, device, train_loader, optimizer, criterion, epoch):
     model.train()
-    for batch_idx, (data, target) in enumerate(train_loader):
-        data, target = data.to(device), target.to(device)
-        optimizer.zero_grad()
-        output = model(data)
-        loss = F.nll_loss(output, target)
-        loss.backward()
-        optimizer.step()
-        if batch_idx % args.log_interval == 0:
-            print("Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}".format(
-                epoch, batch_idx * len(data), len(train_loader.dataset),
-                100. * batch_idx / len(train_loader), loss.item()))
-            if args.single:
-                break
+    train_loss = 0
+    correct = 0
+    for image, label in train_loader:
+        image, label = image.to(device), label.to(device)  
+        optimizer.zero_grad()  
+        output = model(image) 
+        loss = criterion(output, label)  
+        loss.backward() 
+        optimizer.step()  
+        train_loss += loss.item() 
+        pred = output.argmax(dim=1, keepdim=True)
+        correct += pred.eq(label.view_as(pred)).sum().item()
+
+    accuracy = correct*100 / len(train_loader.dataset)
+    print("epoch for train: {}, accuracy: ({:.2f}%)".format(epoch, accuracy))
+    return accuracy
 
 
-def test(model, device, test_loader):
+def test(model, device, test_loader, epoch):
     model.eval()
     test_loss = 0
     correct = 0
     with torch.no_grad():
-        for data, target in test_loader:
-            data, target = data.to(device), target.to(device)
-            output = model(data)
+        for image, target in test_loader:
+            image, target = image.to(device), target.to(device)
+            output = model(image)
             test_loss += F.nll_loss(output, target, reduction="sum").item()  # sum up batch loss
             pred = output.argmax(dim=1, keepdim=True)  # get the index of the max log-probability
             correct += pred.eq(target.view_as(pred)).sum().item()
 
     test_loss /= len(test_loader.dataset)
-
-    print("\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n".format(
-        test_loss, correct, len(test_loader.dataset),
-        100. * correct / len(test_loader.dataset)))
+    accuracy = correct*100 / len(test_loader.dataset)
+    print("epoch for test: {}, accuracy: ({:.2f}%)".format(epoch, accuracy))
+    return accuracy
 
 
 def main():
     # Training settings
     parser = argparse.ArgumentParser(description="PyTorch MNIST Example")
-    parser.add_argument("--bs", type=int, default=64, metavar="N",
-                        help="input batch size for training (default: 64)")
+    parser.add_argument("--bs", type=int, default=16, metavar="N",
+                        help="input batch size for training (default: 128)")
     parser.add_argument("--test_bs", type=int, default=1000, metavar="N",
                         help="input batch size for testing (default: 1000)")
-    parser.add_argument("--epochs", type=int, default=14, metavar="N",
-                        help="number of epochs to train (default: 14)")
-    parser.add_argument("--lr", type=float, default=1.0, metavar="LR",
-                        help="learning rate (default: 1.0)")
-    parser.add_argument("--gamma", type=float, default=0.7, metavar="M",
-                        help="Learning rate step gamma (default: 0.7)")
+    parser.add_argument("--epochs", type=int, default=10, metavar="N",
+                        help="number of epochs to train (default: 10)")
+    parser.add_argument("--lr", type=float, default=1e-03, metavar="LR",
+                        help="learning rate (default: 1e-04)")
     parser.add_argument("--no_cuda", action="store_true", default=False,
                         help="disables CUDA training")
-    parser.add_argument("--single", action="store_true", default=False,
-                        help="quickly check a single pass")
     parser.add_argument("--seed", type=int, default=1, metavar="S",
                         help="random seed (default: 1)")
     parser.add_argument("--log_interval", type=int, default=10, metavar="N",
                         help="how many batches to wait before logging training status")
-    parser.add_argument("--save_model", action="store_true", default=False,
-                        help="For Saving the current Model")
     parser.add_argument("--export_training_curves", action="store_true", 
                         help="Save train/val curves in .png file")
     args = parser.parse_args()
@@ -84,58 +100,66 @@ def main():
     torch.manual_seed(args.seed)
 
     device = torch.device("cuda" if use_cuda else "cpu")
-
-    train_kwargs = {"batch_size": args.bs}
-    test_kwargs = {"batch_size": args.test_bs}
     if use_cuda:
-        cuda_kwargs = {"num_workers": 1,
+        cuda_kwargs = {"num_workers": 4,
                        "pin_memory": True,
                        "shuffle": True}
         train_kwargs.update(cuda_kwargs)
         test_kwargs.update(cuda_kwargs)
 
-    transform = transforms.Compose([
+    transform_train = transforms.Compose([
+        transforms.CenterCrop(size=(80,80)),
+        transforms.RandomAutocontrast(),
+        transforms.Grayscale(num_output_channels=1),
         transforms.Resize([28,28]),
         transforms.ToTensor(),
-        transforms.Normalize(mean=[0.5,0.5,0.5], std=[0.5,0.5,0.5]),
+        transforms.Normalize((0.5,), (0.5,))
         ])
-    dataset1 = datasets.MNIST("../data", train=True, download=True,
-                       transform=transform)
-    dataset2 = datasets.MNIST("../data", train=False,
-                       transform=transform)
-    train_loader = torch.utils.data.DataLoader(dataset1, **train_kwargs)
-    test_loader = torch.utils.data.DataLoader(dataset2, **test_kwargs)
+    transform_test = transforms.Compose([
+        transforms.CenterCrop(size=(80,80)),
+        transforms.Grayscale(num_output_channels=1),
+        transforms.Resize([28,28]),
+        transforms.ToTensor(),
+        transforms.Normalize((0.5,), (0.5,))
+        ])
 
-    model = Net().to(device)
-    optimizer = optim.Adadelta(model.parameters(), lr=args.lr)
+    img_folder = "./data/"
+    train_dataset = Data(img_folder, train=True, transform=transform_train)
+    train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True, num_workers=4, drop_last=False)
+    test_dataset = Data(img_folder, train=False, transform=transform_test)
+    test_loader = DataLoader(test_dataset, batch_size=100, shuffle=True, num_workers=4, drop_last=False)
 
-    scheduler = StepLR(optimizer, step_size=1, gamma=args.gamma)
+    model = net().to(device)
+    optimizer = optim.Adam(model.parameters(), lr=args.lr)
+    criterion = nn.CrossEntropyLoss()
+
+    train_accuracy = []
+    test_accuracy = []
     for epoch in range(1, args.epochs + 1):
-        train(args, model, device, train_loader, optimizer, epoch)
-        test(model, device, test_loader)
-        scheduler.step()
+        train_acc = train(args, model, device, train_loader, optimizer, criterion, epoch)
+        test_acc = test(model, device, test_loader, epoch)
+        train_accuracy.append(train_acc)
+        test_accuracy.append(test_acc)
 
-        # TODO: fix function
-        if args.export_training_curves and epochs > 3:
+        if args.export_training_curves and epoch > 3:
+            import numpy as np
             import matplotlib.pyplot as plt
             import matplotlib
             matplotlib.use("Agg")
             plt.figure()
-            epoch_x = np.arange(3, len(losses_3d_train)) + 1
-            plt.plot(epoch_x, losses_3d_train[3:], "--", color="C0")
-            plt.plot(epoch_x, losses_3d_valid[3:], color="C1")
-            plt.legend(["", ""])
+            epoch_x = np.arange(3, len(train_accuracy)) + 1
+            plt.plot(epoch_x, train_accuracy[3:], "--", color="C0")
+            plt.plot(epoch_x, test_accuracy[3:], color="C1")
+            plt.legend(["Training", "Testing"])
             plt.ylabel("Accuracy (%)")
             plt.xlabel("Epoch")
             plt.xlim((3, epoch))
             plt.savefig("./accuracy.png")
             plt.close("all")
 
-
-    if args.save_model:
-        save_path = "./mnist_cnn.pth"
-        torch.save(model.state_dict(), save_path)
-        print("Parameters saved to ", save_path)
+    save_path = "./digit.pth"
+    torch.save(model.state_dict(), save_path)
+    print("Parameters saved to ", save_path)
 
 
 if __name__ == "__main__":
