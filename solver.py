@@ -1,23 +1,23 @@
 #!/usr/bin/python3
 
 
-def solve(puzzle : list, row, col, cand) -> bool:
-    # check for repetition
+def is_valid(puzzle: list, row, col, cand) -> bool:
+    # check for repetition in row and column
     for x in range(9):
         if puzzle[row][x] == cand or puzzle[x][col] == cand:
             return False
  
-    # check subgrid
-    startRow = row - row % 3
-    startCol = col - col % 3
+    # check in subgrid
+    starting_row = row - row % 3
+    starting_col = col - col % 3
     for i in range(3):
         for j in range(3):
-            if puzzle[i + startRow][j + startCol] == cand:
+            if puzzle[i + starting_row][j + starting_col] == cand:
                 return False
     return True
  
 
-def sudoku(puzzle, row, col):
+def solve(puzzle, row, col):
     if (row == 9 - 1 and col == 9):
         print("Solved")
         return True
@@ -28,12 +28,12 @@ def sudoku(puzzle, row, col):
         col = 0
 
     if puzzle[row][col] > 0:
-        return sudoku(puzzle, row, col + 1)
+        return solve(puzzle, row, col + 1)
 
     for cand in range(1, 10): 
-        if solve(puzzle, row, col, cand):
+        if is_valid(puzzle, row, col, cand):
             puzzle[row][col] = cand
-            if sudoku(puzzle, row, col + 1):
+            if solve(puzzle, row, col + 1):
                 return True
         # revert assumption
         puzzle[row][col] = 0
@@ -47,26 +47,25 @@ def visualize(puzzle: list) -> list:
                 print(puzzle[i][j], "|", end=" ")
             else:
                 print(puzzle[i][j], end=" ")
+        print()
         if i in [2, 5]:
-            print("\n", "-"*21)
-        else:
-            print("")
+            print("-"*21)
 
 
 if __name__ == "__main__":
-    r1 = [8,2,7,5,6,4,0,0,0]
-    r2 = [0,0,0,0,1,0,5,0,0]
-    r3 = [0,0,1,8,0,3,0,0,0]
-    r4 = [3,0,0,0,4,0,9,1,0]
-    r5 = [7,0,0,2,0,0,0,0,8]
-    r6 = [0,9,0,0,0,1,0,6,0]
-    r7 = [0,0,0,4,0,0,0,0,2]
-    r8 = [0,7,0,0,3,0,0,0,0]
-    r9 = [4,0,9,0,0,0,0,0,0]
+    r1 = [8,0,0,0,1,0,0,0,9]
+    r2 = [0,5,0,8,0,7,0,1,0]
+    r3 = [0,0,4,0,9,0,7,0,0]
+    r4 = [0,6,0,7,0,1,0,2,0]
+    r5 = [5,0,8,0,6,0,1,0,7]
+    r6 = [0,1,0,5,0,2,0,9,0]
+    r7 = [0,0,7,0,4,0,6,0,0]
+    r8 = [0,8,0,3,0,9,0,4,0]
+    r9 = [3,0,0,0,5,0,0,0,8]
     puzzle = [r1, r2, r3, r4, r5, r6, r7, r8, r9]
 
     visualize(puzzle)
-    if sudoku(puzzle, 0, 0):
+    if solve(puzzle, 0, 0):
         visualize(puzzle)
     else:
         print("Solution does not exist.")
