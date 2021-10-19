@@ -1,6 +1,8 @@
 #!/usr/bin/python3
 
+import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 
 class Net(nn.Module):
@@ -23,22 +25,21 @@ class Net(nn.Module):
             nn.MaxPool2d(2, 2),
         )
 
-        self.dropout = nn.Dropout(0.25)
-        self.bn = nn.BatchNorm1d(1)
+        self.dropout = nn.Dropout(0.5)
         self.fc1 = nn.Linear(504, 84, bias=False)
         self.fc2 = nn.Linear(84, 10, bias=False)
         self.softmax = nn.Softmax(dim=2)
 
 
     def forward(self, x):
-        bs = x.size(0)
         x = self.pool(self.blk1(x))
         x = self.dropout(x)
         x = self.pool(self.blk2(x))
         x = self.dropout(x)
-        x = x.view(bs, 1, -1)
-        x = self.bn(self.fc1(x))
+        x = torch.flatten(x, 1)
+        x = F.relu(self.fc1(x))
+        x = self.dropout(x)
         x = self.fc2(x)
-        x = self.softmax(x)
+        output = F.softmax(x, dim=1)
 
-        return x.squeeze(1)
+        return output
