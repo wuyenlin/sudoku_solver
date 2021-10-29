@@ -1,16 +1,16 @@
 #!/usr/bin/python3
-from __future__ import print_function
+from utils.model import Net
+
 import argparse
 import os
+from PIL import Image
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import torch.optim as optim
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
-import torch.nn.functional as F
-from PIL import Image
-
-from utils.model import *
+from torch.optim.lr_scheduler import StepLR
 
 """
 This script is borrowed and modified from
@@ -19,14 +19,14 @@ Since the original neural network was giving low accuracy,
 I have built my own model in `utils/model.py`.
 """
 
+
 class Data:
     def __init__(self, img_folder, train: bool, transform=None):
         self.transform = transform
-        self.length = 1000 if train else 200
+        self.length = 2000 if train else 250
 
         self.img_list = [os.path.join(img_folder, "{}.jpg".format(i%10)) for i in range(self.length)]
         self.label_list = [i%10 for i in range(self.length)]
-
 
     def __getitem__(self, index):
         img_path = self.img_list[index]
@@ -83,10 +83,12 @@ def main():
                         help="input batch size for training (default: 128)")
     parser.add_argument("--test_bs", type=int, default=1000, metavar="N",
                         help="input batch size for testing (default: 1000)")
-    parser.add_argument("--epochs", type=int, default=10, metavar="N",
+    parser.add_argument("--epochs", type=int, default=100, metavar="N",
                         help="number of epochs to train (default: 10)")
-    parser.add_argument("--lr", type=float, default=1e-03, metavar="LR",
+    parser.add_argument("--lr", type=float, default=1e-04, metavar="LR",
                         help="learning rate (default: 1e-04)")
+    parser.add_argument('--gamma', type=float, default=0.5, metavar='M',
+                        help='Learning rate step gamma (default: 0.1)')
     parser.add_argument("--no_cuda", action="store_true", default=False,
                         help="disables CUDA training")
     parser.add_argument("--seed", type=int, default=1, metavar="S",
@@ -108,15 +110,25 @@ def main():
         test_kwargs.update(cuda_kwargs)
 
     transform_train = transforms.Compose([
-        transforms.CenterCrop(size=(80,80)),
+        transforms.CenterCrop(size=(90,90)),
         transforms.RandomAutocontrast(),
+        transforms.RandomAffine(
+        degrees=(-45, 45), 
+        scale=(0.7, 1.0),
+        translate=(0.1, 0.3),
+        ),
         transforms.Grayscale(num_output_channels=1),
         transforms.Resize([28,28]),
         transforms.ToTensor(),
         transforms.Normalize((0.5,), (0.5,))
         ])
     transform_test = transforms.Compose([
-        transforms.CenterCrop(size=(80,80)),
+        transforms.CenterCrop(size=(90,90)),
+        transforms.RandomAutocontrast(),
+        transforms.RandomAffine(
+        degrees=(-10, 10), 
+        scale=(0.7, 1.0),
+        ),
         transforms.Grayscale(num_output_channels=1),
         transforms.Resize([28,28]),
         transforms.ToTensor(),
@@ -125,12 +137,13 @@ def main():
 
     img_folder = "./data/"
     train_dataset = Data(img_folder, train=True, transform=transform_train)
-    train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True, num_workers=4, drop_last=False)
+    train_loader = DataLoader(train_dataset, batch_size=args.bs, shuffle=True, drop_last=False)
     test_dataset = Data(img_folder, train=False, transform=transform_test)
-    test_loader = DataLoader(test_dataset, batch_size=100, shuffle=True, num_workers=4, drop_last=False)
+    test_loader = DataLoader(test_dataset, batch_size=100, shuffle=True, drop_last=False)
 
-    model = net().to(device)
+    model = Net().to(device)
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
+    scheduler = StepLR(optimizer, step_size=10, gamma=args.gamma)
     criterion = nn.CrossEntropyLoss()
 
     train_accuracy = []
@@ -140,6 +153,7 @@ def main():
         test_acc = test(model, device, test_loader, epoch)
         train_accuracy.append(train_acc)
         test_accuracy.append(test_acc)
+        scheduler.step()
 
         if args.export_training_curves and epoch > 3:
             import numpy as np
