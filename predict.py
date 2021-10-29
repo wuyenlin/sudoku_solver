@@ -9,20 +9,21 @@ def crop_subgrid():
     import cv2 as cv
     img = cv.imread("./doc/cropped.jpg")
     print(img.shape)
-    cropped = img[400:500, 400:500, :]
-    cv.imshow("image", img[400:500, 400:500, :])
-    cv.imwrite("./data/6.jpg", cropped)
-    k = cv.waitKey(0) & 0xFF
-    if k == 27:
-        cv.destroyAllWindows()
+    cropped = img[700:800, 100:200, :]
+    # cv.imshow("image", cropped)
+    cv.imwrite("./data/8.jpg", cropped)
+    # k = cv.waitKey(0) & 0xFF
+    # if k == 27:
+    #     cv.destroyAllWindows()
 
 
 def tell_digit(model, cell: Image) -> int:
     transform = transforms.Compose([
+        transforms.CenterCrop(size=(90,90)),
         transforms.Grayscale(num_output_channels=1),
         transforms.Resize([28,28]),
         transforms.ToTensor(),
-        transforms.Normalize((0.1307,), (0.3081,))
+        transforms.Normalize((0.5,), (0.5,))
         ])
 
     img = transform(cell)
@@ -31,10 +32,22 @@ def tell_digit(model, cell: Image) -> int:
     return torch.argmax(output).item()
 
 
+def verify(cropped_path):
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    model = Net()
+    model.load_state_dict(torch.load("./digit.pth", map_location=device))
+    model = model.to(device)
+    model.eval()
+
+    cropped_img = Image.open(cropped_path)
+    number = tell_digit(model, cropped_img)
+    print(number)
+
+
 def main(path):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     model = Net()
-    model.load_state_dict(torch.load("./mnist_cnn.pth", map_location=device))
+    model.load_state_dict(torch.load("./digit.pth", map_location=device))
     model = model.to(device)
     model.eval()
 
@@ -57,5 +70,9 @@ def main(path):
 
 
 if __name__ == "__main__":
+    # crop_subgrid()
     path = "./doc/cropped.jpg"
     main(path)
+
+    # cropped_path = "./data/6.jpg"
+    # verify(cropped_path)
