@@ -1,6 +1,6 @@
 # sudoku_solver
 This is a home project that solves the famous number-placement puzzle - [SUDOKU](https://en.wikipedia.org/wiki/Sudoku),
-combined with OpenCV and PyTorch libraries.
+coded in Typescript.
 
 ### Sudoku Solver
 Input of the puzzle
@@ -24,8 +24,7 @@ Arguments (puzzle, 0, 0) mean that the code will start solving the puzzle from 0
 
 To solve the puzzle, use the following code:
 ```
-if sudoku(puzzle, 0, 0):
-    visualize(puzzle)
+tsc solver.ts && node solver.js
 ```
 
 If there is a unique solution to the input puzzle,
