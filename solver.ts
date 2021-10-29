@@ -11,9 +11,7 @@ function repeat_string(string: string, times: number): string{
 function is_valid(puzzle: number[][], row: number, col: number, cand: number): boolean{
     // check for repetition in row and column
     for (var x=0; x<9; x++){
-        if (puzzle[row][x]==cand || puzzle[x][col] == cand){
-            return false;
-        }
+        if (puzzle[row][x]==cand || puzzle[x][col] == cand) return false;
     }
 
     // check in subgrid
@@ -22,9 +20,7 @@ function is_valid(puzzle: number[][], row: number, col: number, cand: number): b
 
     for (var i=0; i<3; i++){
         for (var j=0; j<3; j++){
-            if (puzzle[i+starting_row][j+starting_col] == cand){
-                return false;
-            }
+            if (puzzle[i+starting_row][j+starting_col] == cand) return false;
         }
     }
     return true;
@@ -41,15 +37,12 @@ function solve(puzzle: number[][], row: number, col: number): boolean{
         row += 1;
         col = 0;
     }
-    if (puzzle[row][col] > 0){
-        return solve(puzzle, row, col+1);
-    }
+    if (puzzle[row][col] > 0) return solve(puzzle, row, col+1);
+
     for (var cand=1; cand<10; cand++){
         if (is_valid(puzzle, row, col, cand)){
             puzzle[row][col] = cand;
-            if (solve(puzzle, row, col+1)){
-                return true;
-            }
+            if (solve(puzzle, row, col+1)) return true;
         }
         // revert to 0 if the above assumption is wrong
         puzzle[row][col] = 0;
@@ -60,9 +53,7 @@ function solve(puzzle: number[][], row: number, col: number): boolean{
 function visualize(puzzle: number[][]): void{
     for (var i=0; i<9; i++){
         var row: number[] = [];
-        for (var j=0; j<9; j++){
-            row.push(puzzle[i][j]);
-        }
+        for (var j=0; j<9; j++) row.push(puzzle[i][j]);
         console.log(row);
         if (i==2 || i==5){
             var h_grid: string = repeat_string("-", 23);
