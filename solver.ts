@@ -63,21 +63,24 @@ function visualize(puzzle: number[][]): void{
 }
 
 
-// Execute an example
-let r1: number[] = [8,0,0,0,1,0,0,0,9];
-let r2: number[] = [0,5,0,8,0,7,0,1,0];
-let r3: number[] = [0,0,4,0,9,0,7,0,0];
-let r4: number[] = [0,6,0,7,0,1,0,2,0];
-let r5: number[] = [5,0,8,0,6,0,1,0,7];
-let r6: number[] = [0,1,0,5,0,2,0,9,0];
-let r7: number[] = [0,0,7,0,4,0,6,0,0];
-let r8: number[] = [0,8,0,3,0,9,0,4,0];
-let r9: number[] = [3,0,0,0,5,0,0,0,8];
-let puzzle: number[][] = [r1,r2,r3,r4,r5,r6,r7,r8,r9];
+const main = () =>{
+    const r1: number[] = [8,0,0,0,1,0,0,0,9];
+    const r2: number[] = [0,5,0,8,0,7,0,1,0];
+    const r3: number[] = [0,0,4,0,9,0,7,0,0];
+    const r4: number[] = [0,6,0,7,0,1,0,2,0];
+    const r5: number[] = [5,0,8,0,6,0,1,0,7];
+    const r6: number[] = [0,1,0,5,0,2,0,9,0];
+    const r7: number[] = [0,0,7,0,4,0,6,0,0];
+    const r8: number[] = [0,8,0,3,0,9,0,4,0];
+    const r9: number[] = [3,0,0,0,5,0,0,0,8];
+    const puzzle: number[][] = [r1,r2,r3,r4,r5,r6,r7,r8,r9];
 
-visualize(puzzle);
-if (solve(puzzle, 0, 0)){
     visualize(puzzle);
-} else{
-    console.log("Solution does not exist.");
-}
+    if (solve(puzzle, 0, 0)){
+        visualize(puzzle);
+    } else{
+        console.log("Solution does not exist.");
+    }
+};
+
+main()
