@@ -63,7 +63,7 @@ function visualize(puzzle: number[][]): void{
 }
 
 
-const main = () =>{
+function main(){
     const r1: number[] = [8,0,0,0,1,0,0,0,9];
     const r2: number[] = [0,5,0,8,0,7,0,1,0];
     const r3: number[] = [0,0,4,0,9,0,7,0,0];
@@ -81,6 +81,6 @@ const main = () =>{
     } else{
         console.log("Solution does not exist.");
     }
-};
+}
 
-main()
+main();
