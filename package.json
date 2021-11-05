@@ -1,0 +1,23 @@
+{
+  "name": "sudoku_solver",
+  "version": "1.0.0",
+  "description": "This is a home project that solves the famous number-placement puzzle - [SUDOKU](https://en.wikipedia.org/wiki/Sudoku), coded in Typescript.",
+  "main": "solver.js",
+  "directories": {
+    "doc": "doc"
+  },
+  "scripts": {
+    "tsc": "tsc",
+    "tsc:w": "tsc --watch",
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wuyenlin/sudoku_solver.git"
+  },
+  "author": "ylwu",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/wuyenlin/sudoku_solver/issues"
+  },
+  "homepage": "https://github.com/wuyenlin/sudoku_solver#readme"
+}
