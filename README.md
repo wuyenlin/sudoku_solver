@@ -2,6 +2,13 @@
 This is a home project that solves the famous number-placement puzzle - [SUDOKU](https://en.wikipedia.org/wiki/Sudoku),
 coded in Typescript.
 
+To start running the application, run
+```
+npm install
+npm start
+```
+This code will automatically start up a page in your default browser.
+
 ### Sudoku Solver
 Input of the puzzle
 ```
@@ -45,5 +52,6 @@ it will return
 
 
 ### TODO
-- [ ] Create user interface
+- [X] Create user interface
+- [ ] Visualized solved puzzle on screen
 - [X] Solve sudoku
