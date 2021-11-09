@@ -45,37 +45,44 @@ type Puzzle = {r1: string, r2: string, r3: string, r4: string, r5: string,
             r6: string, r7: string, r8: string, r9: string};
 
 
-class Sudoku{
-    private puzzle: number[][];
+class Sudoku {
+    private puzzle: HTMLInputElement[];
     private output: HTMLSpanElement;
 
-    constructor(puzzleIds: Puzzle, OutputId: string) {
-        this.puzzle = this.make_puzzle(puzzleIds);
-        this.output = <HTMLSpanElement>document.getElementById(OutputId);
+    constructor(puzzleIds: Puzzle, outputId: string){
+        this.puzzle = this.stackElements(puzzleIds);
+        this.output = <HTMLSpanElement>document.getElementById(outputId);
         this.wireEvents();
     }
 
-
-    make_puzzle(puzzleIds: Puzzle): number[][]{
-        var puzzle = [];
-        for (var row in puzzleIds){
-            var string = <HTMLInputElement>document.getElementById(puzzleIds[row]);
-            var array: number[] = (string.value).split("").map(Number);
-            puzzle.push(array);
-        }
-        console.log(puzzle);
-        return puzzle;
+    stackElements(puzzleIds: Puzzle): HTMLInputElement[]{
+        var elements: HTMLInputElement[] = [];
+        for (var row in puzzleIds) elements.push(<HTMLInputElement>document.getElementById(puzzleIds[row]));
+        return elements;
     }
     
+    processId(elements: HTMLInputElement[]): number[][]{
+        var arrays: number[][] = [];
+        for (var i=0; i<10; i++) arrays.push((elements[i].value).split("").map(Number));
+        return arrays
+    }
+
     wireEvents(){
-        document.getElementById("Solve").addEventListener("click",
+        document.getElementById("Solve")!.addEventListener("click",
             event => {
-                this.output.innerHTML = this.Solve(this.puzzle)?.toString();
+                // this.output.innerHTML = this.Solve(this.processId(this.puzzle)).toString();
+                this.output.innerHTML = this.solve(this.processId(this.puzzle));
             });
     }
 
-    Solve(puzzle: number[][]){
-        if (find_solution(puzzle, 0, 0)) return puzzle;
+
+    solve(puzzle: number[][]): string{
+        if (find_solution(puzzle, 0, 0)) {
+            console.log(puzzle);
+            return "Solved";
+        } else{
+            return "Unsolved!";
+        }
     }
 }
 
