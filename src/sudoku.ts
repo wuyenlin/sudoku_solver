@@ -10,10 +10,10 @@ function repeat_string(string: string, times: number): string{
     return repeated
 }
 
-function visualize(puzzle: number[][]): string{
-    var formatted: string = puzzle.toString();
-    /** convert to string array and add | and \n to visualize the grid properly */
-    return formatted;
+function visualize(puzzle: number[][]): string[]{
+    const string_array: string[] = Object.keys(puzzle).map(
+        (key: string): string => String(puzzle[key]));
+    return string_array;
 }
 
 class Sudoku {
@@ -84,8 +84,7 @@ class Sudoku {
     solve(puzzle: number[][]): string{
         if (this.find_solution(puzzle, 0, 0)) {
             console.log(puzzle);
-            // return "Solved";
-            return puzzle.toString();
+            return String(visualize(puzzle));
         } else{
             return "Unsolved!";
         }
